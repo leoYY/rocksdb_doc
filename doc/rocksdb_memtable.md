@@ -53,8 +53,18 @@
 	
 ###### 关注点 prefix_extractor_
 
-prefix\_extractor\_ 优化主要应用在hash_skiplist_rep／hash_linklist_rep两种数据结构中，通过上层hash索引prefix_extractor作为hash索引可以保证在想通prefix下的桶内使用seek，降低seek复杂度。另外dynamic_bloom也有应用于prefix_extractor来加key
-	
+prefix\_extractor\_ 优化主要应用在hash_skiplist_rep／hash_linklist_rep两种数据结构中，通过上层hash索引prefix_extractor作为hash索引可以保证在想通prefix下的桶内使用seek，降低seek复杂度。另外dynamic_bloom也有应用于prefix_extractor来加key。  
+
+**hash\_skiplist\_rep**中getIterator会新建一个skiplist，返回普通iterator，因此对于hash\_skiplist\_rep并不适合跨range查询，效率会比较低，而对于查询指定前缀（或匹配一定规则）hash\_skiplist\_rep的优势是根据prefix进行hash分bucket，并在bucket中的skiplist进行遍历，减少了普通skiplist中访问的数据量。
+
+hash\_skiplist\_rep有两个Iterator， DynamicIterator和Iterator，分别对应上面的支持分桶skiplist查询和重建全量skiplist查询的迭代器。
+
+**hash\_linklist\_rep**中的情况类似，包含LinkListIterator，EmptyIterator，	DynamicIterator，FullListIterator。其中hash\_linklist\_rep中提供两个获取借口GetIterator，和GetDynamicIterator。其中GetIterator，会申请一个新的skiplist，并会根据bucket的具体为linklist／skiplist来进行遍历，返回fulllistIterator，GetDynamicIterator，如果bucket中的list为linklist则会编程线性查找。
+
+###### 关注点 hashCuckooRep 数据结构
+
+此处主要关注Cuckoo hashing的原理， 最早是从bloomfilter的替代品中了解到Cuckoo filter。
+
 #### class DynamicBloom
 
 dynamicbloom 应该是rocksdb对应bloom fliter类似
